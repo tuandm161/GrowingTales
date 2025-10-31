@@ -7,12 +7,19 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 
-// Add HttpClient for Gemini API
+// Add HttpClient for external APIs
 builder.Services.AddHttpClient<GeminiService>();
+builder.Services.AddHttpClient<ImageGenerationService>(client =>
+{
+    var timeoutSeconds = builder.Configuration.GetValue<int?>("WhomeAI:TimeoutSeconds") ?? 60;
+    client.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
+});
 
 // Add custom services
 builder.Services.AddSingleton<GeminiService>();
 builder.Services.AddSingleton<StoryStorageService>();
+builder.Services.AddSingleton<ImageGenerationService>();
+builder.Services.AddSingleton<ImagePromptService>();
 
 // Add CORS
 builder.Services.AddCors(options =>

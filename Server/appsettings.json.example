@@ -8,6 +8,13 @@
   "AllowedHosts": "*",
   "Gemini": {
     "ApiKey": "YOUR_GEMINI_API_KEY_HERE"
+  },
+  "WhomeAI": {
+    "ApiKey": "YOUR_WHOMEAI_API_KEY_HERE (default sk-demo)",
+    "BaseUrl": "https://api.whomeai.com",
+    "Retries": 5,
+    "TimeoutSeconds": 60,
+    "DelayBetweenPagesMs": 800
   }
 }
 

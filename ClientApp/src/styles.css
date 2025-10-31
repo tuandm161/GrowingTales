@@ -1,1 +1,13 @@
-/* You can add global styles to this file, and also import other style files */
+/* Global typography for Vietnamese */
+html, body {
+  font-family: 'Nunito', 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Improve paragraph readability */
+p {
+  line-height: 1.75;
+  letter-spacing: 0.1px;
+}

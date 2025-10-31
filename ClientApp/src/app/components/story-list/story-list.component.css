@@ -1,6 +1,6 @@
 .list-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  background: transparent;
   padding: 2rem;
 }
 
@@ -14,7 +14,8 @@
   margin: 0 0 0.5rem 0;
   font-size: 2.5rem;
   font-weight: 700;
-  color: #2c3e50;
+  color: #442a46;
+  font-family: 'Fredoka', 'Nunito', 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
 }
 
 .subtitle {
@@ -71,13 +72,16 @@
 }
 
 .empty-state {
-  background: white;
+  background: rgba(255, 255, 255, 0.92);
   padding: 4rem 3rem;
-  border-radius: 20px;
+  border-radius: 28px;
   text-align: center;
   max-width: 600px;
   margin: 0 auto;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 16px 48px rgba(255, 182, 217, 0.25), 0 8px 24px rgba(180, 228, 255, 0.2);
+  backdrop-filter: blur(8px);
+  border: 2px dashed rgba(255, 182, 217, 0.3);
+  background-image: radial-gradient(circle at 50% 50%, rgba(255, 250, 205, 0.3) 0%, transparent 70%);
 }
 
 .empty-icon {
@@ -104,27 +108,59 @@
 }
 
 .story-card {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(255, 182, 217, 0.25), 0 4px 16px rgba(180, 228, 255, 0.2), inset 0 1px 0 rgba(255,255,255,0.8);
+  backdrop-filter: blur(8px);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  border: 2px solid rgba(255, 182, 217, 0.2);
+  position: relative;
+}
+
+.story-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 182, 217, 0.06) 0%, rgba(180, 228, 255, 0.06) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  border-radius: 24px;
+}
+
+.story-card:hover::before {
+  opacity: 1;
 }
 
 .story-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  transform: translateY(-8px) scale(1.01);
+  box-shadow: 0 16px 48px rgba(255, 182, 217, 0.35), 0 8px 24px rgba(180, 228, 255, 0.3);
+  border-color: rgba(255, 182, 217, 0.4);
 }
 
 .card-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #FFB6D9 0%, #B4E4FF 100%);
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(255,255,255,0.08) 6px, rgba(255,255,255,0.08) 12px);
   padding: 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-header::after {
+  content: '📚';
+  position: absolute;
+  top: -15px;
+  right: -15px;
+  font-size: 60px;
+  opacity: 0.12;
+  transform: rotate(15deg);
 }
 
 .card-icon {
@@ -222,13 +258,18 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #FFB6D9 0%, #B4E4FF 100%);
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(255,255,255,0.1) 6px, rgba(255,255,255,0.1) 12px);
   color: white;
+  box-shadow: 0 6px 20px rgba(255, 182, 217, 0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 10px 32px rgba(255, 182, 217, 0.5), inset 0 1px 0 rgba(255,255,255,0.4);
+  background: linear-gradient(135deg, #FFCFA8 0%, #FFB6D9 100%);
 }
 
 .btn-secondary {

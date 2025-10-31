@@ -10,12 +10,22 @@ public class GeminiService
     private readonly HttpClient _httpClient;
     private readonly ILogger<GeminiService> _logger;
     private readonly string _apiKey;
+    private readonly ImageGenerationService _imageService;
+    private readonly ImagePromptService _imagePromptService;
+    private readonly int _imageDelayMs;
 
-    public GeminiService(HttpClient httpClient, ILogger<GeminiService> logger, IConfiguration configuration)
+    public GeminiService(HttpClient httpClient, ILogger<GeminiService> logger, IConfiguration configuration, ImageGenerationService imageService, ImagePromptService imagePromptService)
     {
         _httpClient = httpClient;
         _logger = logger;
-        _apiKey = configuration["Gemini:ApiKey"] ?? "AIzaSyAlAAu1FXCtzXBel_6eQ_4e95CTO5GifBM";
+        _apiKey = configuration["Gemini:ApiKey"] ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(_apiKey))
+        {
+            throw new InvalidOperationException("Gemini API key is missing. Please set 'Gemini:ApiKey' in configuration.");
+        }
+        _imageService = imageService;
+        _imagePromptService = imagePromptService;
+        _imageDelayMs = int.TryParse(configuration["WhomeAI:DelayBetweenPagesMs"], out var d) ? Math.Max(0, d) : 300;
     }
 
     public async Task<Story> GenerateStoryFromText(StoryRequest request)
@@ -25,12 +35,76 @@ public class GeminiService
         
         var story = ParseStoryFromResponse(generatedContent, request);
         
-        // Set placeholder images for each page
+        // Generate images for each page using separate image prompt (cute, wholesome, vibrant cartoon)
+        _logger.LogInformation($"Starting image generation for {story.Pages.Count} pages");
+        
+        for (int i = 0; i < story.Pages.Count; i++)
+        {
+            var page = story.Pages[i];
+            _logger.LogInformation($"Generating image for page {page.PageNumber} ({i + 1}/{story.Pages.Count})");
+            
+            bool imageGenerated = false;
+            
+            try
+            {
+                var imagePrompt = _imagePromptService.BuildImagePrompt(story, page);
+                _logger.LogInformation($"Image prompt for page {page.PageNumber}: {imagePrompt.Substring(0, Math.Min(50, imagePrompt.Length))}...");
+                
+                var dataUrl = await _imageService.GenerateImageBase64(imagePrompt);
+                
+                if (!string.IsNullOrWhiteSpace(dataUrl) && dataUrl.StartsWith("data:image"))
+                {
+                    page.ImageUrl = dataUrl;
+                    imageGenerated = true;
+                    _logger.LogInformation($"✅ Successfully generated image for page {page.PageNumber}");
+                }
+                else
+                {
+                    _logger.LogWarning($"⚠️ Invalid image data URL for page {page.PageNumber}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ Failed to generate image for page {page.PageNumber}: {ex.Message}");
+            }
+            
+            // Always set fallback if image generation failed
+            if (!imageGenerated || string.IsNullOrWhiteSpace(page.ImageUrl))
+            {
+                var seed = $"{story.Title}-{page.PageNumber}".GetHashCode();
+                page.ImageUrl = $"https://picsum.photos/seed/{Math.Abs(seed)}/512/512";
+                _logger.LogWarning($"🔄 Using placeholder image for page {page.PageNumber}");
+            }
+            
+            // Delay between pages to avoid rate limiting (except for last page)
+            if (i < story.Pages.Count - 1 && _imageDelayMs > 0)
+            {
+                _logger.LogInformation($"Waiting {_imageDelayMs}ms before next image generation...");
+                await Task.Delay(_imageDelayMs);
+            }
+        }
+
+        // Final validation: ensure every page has non-empty ImageUrl
+        _logger.LogInformation("Validating all pages have images...");
+        int missingCount = 0;
         foreach (var page in story.Pages)
         {
-            // Use Lorem Picsum for consistent placeholder images
-            var seed = $"{story.Title}-{page.PageNumber}".GetHashCode();
-            page.ImageUrl = $"https://picsum.photos/seed/{Math.Abs(seed)}/512/512";
+            if (string.IsNullOrWhiteSpace(page.ImageUrl))
+            {
+                missingCount++;
+                var seed = $"{story.Title}-{page.PageNumber}".GetHashCode();
+                page.ImageUrl = $"https://picsum.photos/seed/{Math.Abs(seed)}/512/512";
+                _logger.LogWarning($"🔧 Fixed missing image for page {page.PageNumber}");
+            }
+        }
+        
+        if (missingCount > 0)
+        {
+            _logger.LogWarning($"Fixed {missingCount} pages with missing images using placeholders");
+        }
+        else
+        {
+            _logger.LogInformation("✅ All pages have images assigned");
         }
         
         return story;
@@ -117,7 +191,7 @@ public class GeminiService
 
     private string BuildStoryPrompt(StoryRequest request)
     {
-        var prompt = $@"Bạn là một nhà văn chuyên viết truyện cho trẻ em. Hãy tạo một câu chuyện đẹp và ý nghĩa dựa trên thông tin sau:
+        var prompt = $@"Bạn là một nhà văn chuyên viết truyện cho trẻ em. Hãy tạo một câu chuyện đẹp và ý nghĩa, giàu chi tiết, dựa trên thông tin sau:
 
 Tên bé: {request.ChildName}
 Tuổi: {request.ChildAge}
@@ -129,9 +203,11 @@ Số trang: {request.PageCount}
 Yêu cầu:
 1. Tạo một câu chuyện phù hợp với lứa tuổi {request.ChildAge}
 2. Câu chuyện phải có ý nghĩa giáo dục, truyền cảm hứng tích cực
-3. Sử dụng ngôn ngữ đơn giản, dễ hiểu
-4. Chia thành {request.PageCount} trang, mỗi trang khoảng 2-3 câu
-5. Mỗi trang cần có mô tả hình ảnh để minh họa
+3. Sử dụng ngôn ngữ đơn giản, dễ hiểu, ấm áp
+4. Chia thành {request.PageCount} trang, mỗi trang khoảng 4-6 câu văn.
+   - Ưu tiên thêm miêu tả cảm xúc, âm thanh, màu sắc, và 1-2 câu hội thoại ngắn
+   - Duy trì mạch truyện mượt mà, có mở đầu, cao trào và kết thúc dịu nhẹ
+5. Mỗi trang cần có mô tả hình ảnh (imagePrompt) để minh họa
 
 ⚠️ QUAN TRỌNG:
 - ""content"" phải viết bằng TIẾNG VIỆT
@@ -179,7 +255,7 @@ Chỉ trả về JSON, không thêm bất kỳ text nào khác.";
                     temperature = 0.7,
                     topK = 40,
                     topP = 0.95,
-                    maxOutputTokens = 4096,
+                    maxOutputTokens = 8192,
                     responseMimeType = "application/json"
                 }
             };
