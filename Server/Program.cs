@@ -49,8 +49,10 @@ builder.Services.AddSingleton<GeminiService>();
 builder.Services.AddScoped<StoryStorageService>();
 builder.Services.AddSingleton<ImageGenerationService>();
 builder.Services.AddSingleton<ImagePromptService>();
+builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<SubscriptionService>();
+builder.Services.AddScoped<FileUploadService>();
 builder.Services.AddSingleton<VnPayService>();
 
 var app = builder.Build();

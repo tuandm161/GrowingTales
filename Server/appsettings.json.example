@@ -6,15 +6,29 @@
     }
   },
   "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "DefaultConnection": "Data Source=growingtales.db"
+  },
   "Gemini": {
     "ApiKey": "YOUR_GEMINI_API_KEY_HERE"
   },
-  "WhomeAI": {
-    "ApiKey": "YOUR_WHOMEAI_API_KEY_HERE (default sk-demo)",
-    "BaseUrl": "https://api.whomeai.com",
-    "Retries": 5,
-    "TimeoutSeconds": 60,
-    "DelayBetweenPagesMs": 800
+  "VnPay": {
+    "Url": "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
+    "TmnCode": "YOUR_VNPAY_TMN_CODE",
+    "HashSecret": "YOUR_VNPAY_HASH_SECRET",
+    "Version": "2.1.0"
+  },
+  "Email": {
+    "SmtpHost": "smtp.gmail.com",
+    "SmtpPort": 587,
+    "SmtpUsername": "your-email@gmail.com",
+    "SmtpPassword": "your-app-password",
+    "FromEmail": "your-email@gmail.com",
+    "FromName": "GrowingTales",
+    "EnableSsl": true,
+    "BaseUrl": "https://localhost:5001"
+  },
+  "AppSettings": {
+    "BaseUrl": "https://localhost:5001"
   }
 }
-

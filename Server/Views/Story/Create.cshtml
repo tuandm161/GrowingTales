@@ -29,11 +29,12 @@
                     }
 
                     <form asp-action="Create" method="post" id="createStoryForm">
+                        @Html.AntiForgeryToken()
                         <input type="hidden" asp-for="UseAudio" id="useAudio" />
                         <input type="hidden" asp-for="AudioBase64" id="audioBase64" />
                         <input type="hidden" asp-for="AudioMimeType" id="audioMimeType" />
                         
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                        <div asp-validation-summary="All" class="alert alert-danger"></div>
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
@@ -138,10 +139,25 @@
     const audioMimeTypeInput = document.getElementById('audioMimeType');
     const submitBtn = document.getElementById('submitBtn');
 
+    // Initialize UseAudio based on active tab
+    function updateUseAudio() {
+        const activeTab = document.querySelector('.nav-link.active');
+        if (activeTab) {
+            const target = activeTab.getAttribute('data-bs-target');
+            useAudioInput.value = target === '#audioTab' ? 'true' : 'false';
+        } else {
+            // Default to text tab if no active tab found
+            useAudioInput.value = 'false';
+        }
+    }
+
+    // Set initial value
+    updateUseAudio();
+
     // Tab change handler
     document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
         tab.addEventListener('shown.bs.tab', (e) => {
-            useAudioInput.value = e.target.getAttribute('data-bs-target') === '#audioTab' ? 'true' : 'false';
+            updateUseAudio();
         });
     });
 
@@ -198,6 +214,48 @@
 
     // Form submission
     document.getElementById('createStoryForm').addEventListener('submit', function(e) {
+        // Ensure UseAudio is set correctly before submission
+        updateUseAudio();
+        
+        // Validate form before submission
+        const childName = document.querySelector('[name="ChildName"]').value.trim();
+        const childAge = document.querySelector('[name="ChildAge"]').value;
+        const useAudio = useAudioInput.value === 'true';
+        const audioBase64 = audioBase64Input.value;
+        const content = document.querySelector('[name="Content"]').value.trim();
+
+        if (!childName) {
+            e.preventDefault();
+            alert('Vui lòng nhập tên bé');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-stars me-2"></i>Tạo Truyện';
+            return false;
+        }
+
+        if (!childAge || childAge < 1 || childAge > 15) {
+            e.preventDefault();
+            alert('Vui lòng nhập tuổi hợp lệ (1-15)');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-stars me-2"></i>Tạo Truyện';
+            return false;
+        }
+
+        if (useAudio && !audioBase64) {
+            e.preventDefault();
+            alert('Vui lòng ghi âm hoặc chuyển sang tab nhập văn bản');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-stars me-2"></i>Tạo Truyện';
+            return false;
+        }
+
+        if (!useAudio && !content) {
+            e.preventDefault();
+            alert('Vui lòng nhập nội dung hoặc ý tưởng cho truyện');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-stars me-2"></i>Tạo Truyện';
+            return false;
+        }
+
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang tạo truyện...';
     });

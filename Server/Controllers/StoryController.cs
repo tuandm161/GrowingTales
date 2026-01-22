@@ -91,6 +91,9 @@ public class StoryController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateStoryViewModel model)
     {
+        _logger.LogInformation("Create story POST called. Model: ChildName={ChildName}, ChildAge={ChildAge}, UseAudio={UseAudio}", 
+            model?.ChildName, model?.ChildAge, model?.UseAudio);
+
         var userId = GetCurrentUserId();
         var limits = await _subscriptionService.GetUserLimitsAsync(userId);
         
@@ -102,16 +105,44 @@ public class StoryController : Controller
 
         if (!ModelState.IsValid)
         {
+            _logger.LogWarning("ModelState is invalid. Errors: {Errors}", 
+                string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
             ViewBag.Limits = limits;
             return View(model);
+        }
+
+        if (model == null)
+        {
+            _logger.LogWarning("Model is null in Create action");
+            TempData["ErrorMessage"] = "Dữ liệu không hợp lệ";
+            return RedirectToAction("Create");
         }
 
         try
         {
             Story story;
 
+            // Validate: if UseAudio is true, AudioBase64 must be provided
+            if (model.UseAudio && string.IsNullOrWhiteSpace(model.AudioBase64))
+            {
+                _logger.LogWarning("UseAudio is true but AudioBase64 is empty");
+                ModelState.AddModelError("", "Vui lòng ghi âm hoặc nhập nội dung truyện");
+                ViewBag.Limits = limits;
+                return View(model);
+            }
+
+            // Validate: if not using audio, Content should be provided
+            if (!model.UseAudio && string.IsNullOrWhiteSpace(model.Content))
+            {
+                _logger.LogWarning("Not using audio but Content is empty");
+                ModelState.AddModelError("Content", "Vui lòng nhập nội dung hoặc ý tưởng cho truyện");
+                ViewBag.Limits = limits;
+                return View(model);
+            }
+
             if (model.UseAudio && !string.IsNullOrEmpty(model.AudioBase64))
             {
+                _logger.LogInformation("Generating story from audio");
                 var audioRequest = new AudioStoryRequest
                 {
                     ChildName = model.ChildName,
@@ -123,6 +154,7 @@ public class StoryController : Controller
             }
             else
             {
+                _logger.LogInformation("Generating story from text");
                 var textRequest = new StoryRequest
                 {
                     ChildName = model.ChildName,
