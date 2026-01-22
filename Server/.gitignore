@@ -6,7 +6,6 @@
 *.user
 *.userosscache
 *.sln.docstates
-*.rsuser
 
 # Build results
 [Dd]ebug/
@@ -15,55 +14,55 @@
 [Rr]eleases/
 x64/
 x86/
-[Ww][Ii][Nn]32/
-[Aa][Rr][Mm]/
-[Aa][Rr][Mm]64/
+build/
 bld/
 [Bb]in/
 [Oo]bj/
-[Ll]og/
-[Ll]ogs/
+[Pp]ublish/
+publish.zip
 
-# Visual Studio cache/options
-.vs/
-.vscode/
+# MSTest test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
 
-# Database
+# NuGet Packages
+*.nupkg
+**/packages/*
+*.snupkg
+
+# Database files
 *.db
 *.db-shm
 *.db-wal
 *.sqlite
 *.sqlite3
 
-# Sensitive configuration
-**/appsettings.Development.json
-**/appsettings.Local.json
+# Sensitive files
+appsettings.Development.json
+appsettings.Local.json
 *.pfx
 *.key
 .env
 .env.local
-**/secrets.json
 
-# Node modules (nếu còn)
-node_modules/
-npm-debug.log
-yarn-error.log
+# VS Code
+.vscode/
+.vs/
+
+# Rider
+.idea/
+
+# User secrets
+**/secrets.json
 
 # Azure
 *.PublishSettings
 *.azurePubxml
-publish/
-publish.zip
 
 # Logs
-*.log
 logs/
+*.log
 
-# OS files
+# OS generated files
 .DS_Store
 Thumbs.db
-desktop.ini
-
-# Backup files
-*.bak
-*.backup

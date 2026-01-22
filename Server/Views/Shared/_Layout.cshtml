@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - GrowingTales</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/site.css" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <partial name="_Navbar" />
+    
+    <main>
+        @RenderBody()
+    </main>
+
+    <footer class="footer mt-auto py-4 bg-dark text-white">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5><i class="bi bi-book"></i> GrowingTales</h5>
+                    <p class="text-muted">Tạo truyện cho bé yêu với AI</p>
+                </div>
+                <div class="col-md-4">
+                    <h6>Liên kết</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="/" class="text-muted">Trang chủ</a></li>
+                        <li><a href="/Story/Create" class="text-muted">Tạo truyện</a></li>
+                        <li><a href="/Subscription/Pricing" class="text-muted">Bảng giá</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h6>Liên hệ</h6>
+                    <p class="text-muted mb-1"><i class="bi bi-envelope"></i> support@growingtales.vn</p>
+                    <p class="text-muted"><i class="bi bi-telephone"></i> 0123 456 789</p>
+                </div>
+            </div>
+            <hr class="my-3 border-secondary">
+            <p class="text-center text-muted mb-0">&copy; 2024 GrowingTales. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,205 @@
+@model CreateStoryViewModel
+@{
+    ViewData["Title"] = "Tạo truyện mới";
+    var limits = ViewBag.Limits as Server.Models.UserLimitsDto;
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-stars me-2"></i>Tạo Truyện Mới</h4>
+                </div>
+                <div class="card-body p-4">
+                    @if (limits != null && limits.Plan == "Free")
+                    {
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Bạn còn @limits.StoriesRemaining/@limits.MaxStoriesAllowed truyện miễn phí.
+                            <a href="/Subscription/Pricing" class="alert-link">Nâng cấp Premium</a> để tạo không giới hạn!
+                        </div>
+                    }
+
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+                        </div>
+                    }
+
+                    <form asp-action="Create" method="post" id="createStoryForm">
+                        <input type="hidden" asp-for="UseAudio" id="useAudio" />
+                        <input type="hidden" asp-for="AudioBase64" id="audioBase64" />
+                        <input type="hidden" asp-for="AudioMimeType" id="audioMimeType" />
+                        
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="ChildName" class="form-label"></label>
+                                <input asp-for="ChildName" class="form-control" placeholder="VD: Bé An" />
+                                <span asp-validation-for="ChildName" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="ChildAge" class="form-label"></label>
+                                <input asp-for="ChildAge" type="number" class="form-control" min="1" max="15" />
+                                <span asp-validation-for="ChildAge" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Theme" class="form-label"></label>
+                            <select asp-for="Theme" class="form-select">
+                                <option value="">-- Chọn chủ đề --</option>
+                                <option value="Dũng cảm">Dũng cảm</option>
+                                <option value="Tình bạn">Tình bạn</option>
+                                <option value="Gia đình">Gia đình</option>
+                                <option value="Phiêu lưu">Phiêu lưu</option>
+                                <option value="Học tập">Học tập</option>
+                                <option value="Thiên nhiên">Thiên nhiên</option>
+                                <option value="Động vật">Động vật</option>
+                                <option value="Khoa học">Khoa học</option>
+                            </select>
+                        </div>
+
+                        <!-- Tab Navigation -->
+                        <ul class="nav nav-tabs mb-3" role="tablist">
+                            <li class="nav-item">
+                                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#textTab" type="button">
+                                    <i class="bi bi-pencil me-2"></i>Nhập văn bản
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#audioTab" type="button">
+                                    <i class="bi bi-mic me-2"></i>Ghi âm
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content">
+                            <!-- Text Input Tab -->
+                            <div class="tab-pane fade show active" id="textTab">
+                                <div class="mb-3">
+                                    <label asp-for="Content" class="form-label">Nội dung / Ý tưởng truyện</label>
+                                    <textarea asp-for="Content" class="form-control" rows="6" 
+                                        placeholder="Mô tả ý tưởng câu chuyện của bạn. VD: Một câu chuyện về chú mèo con đi lạc và tìm đường về nhà..."></textarea>
+                                    <div class="form-text">Càng chi tiết, truyện càng hay!</div>
+                                </div>
+                            </div>
+
+                            <!-- Audio Recording Tab -->
+                            <div class="tab-pane fade" id="audioTab">
+                                <div class="text-center py-4">
+                                    <div id="audioStatus" class="mb-3">
+                                        <i class="bi bi-mic-fill display-4 text-muted"></i>
+                                        <p class="text-muted mt-2">Nhấn nút để bắt đầu ghi âm</p>
+                                    </div>
+                                    <button type="button" id="recordBtn" class="btn btn-danger btn-lg rounded-circle" style="width: 80px; height: 80px;">
+                                        <i class="bi bi-mic-fill fs-3"></i>
+                                    </button>
+                                    <div id="recordingTime" class="mt-3 fs-4 text-danger d-none">00:00</div>
+                                    <audio id="audioPreview" class="mt-3 d-none w-100" controls></audio>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                <i class="bi bi-stars me-2"></i>Tạo Truyện
+                            </button>
+                            <a href="/Story" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Quay lại thư viện
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecording = false;
+    let recordingTimer = null;
+    let recordingSeconds = 0;
+
+    const recordBtn = document.getElementById('recordBtn');
+    const audioStatus = document.getElementById('audioStatus');
+    const recordingTime = document.getElementById('recordingTime');
+    const audioPreview = document.getElementById('audioPreview');
+    const useAudioInput = document.getElementById('useAudio');
+    const audioBase64Input = document.getElementById('audioBase64');
+    const audioMimeTypeInput = document.getElementById('audioMimeType');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Tab change handler
+    document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', (e) => {
+            useAudioInput.value = e.target.getAttribute('data-bs-target') === '#audioTab' ? 'true' : 'false';
+        });
+    });
+
+    recordBtn.addEventListener('click', async () => {
+        if (!isRecording) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    audioPreview.src = URL.createObjectURL(audioBlob);
+                    audioPreview.classList.remove('d-none');
+
+                    // Convert to base64
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        audioBase64Input.value = reader.result.split(',')[1];
+                        audioMimeTypeInput.value = 'audio/webm';
+                    };
+                    reader.readAsDataURL(audioBlob);
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                recordBtn.innerHTML = '<i class="bi bi-stop-fill fs-3"></i>';
+                recordBtn.classList.replace('btn-danger', 'btn-warning');
+                audioStatus.innerHTML = '<div class="text-danger"><i class="bi bi-record-circle me-2"></i>Đang ghi âm...</div>';
+                recordingTime.classList.remove('d-none');
+                
+                recordingSeconds = 0;
+                recordingTimer = setInterval(() => {
+                    recordingSeconds++;
+                    const mins = Math.floor(recordingSeconds / 60).toString().padStart(2, '0');
+                    const secs = (recordingSeconds % 60).toString().padStart(2, '0');
+                    recordingTime.textContent = `${mins}:${secs}`;
+                }, 1000);
+
+            } catch (err) {
+                alert('Không thể truy cập microphone. Vui lòng cấp quyền truy cập.');
+            }
+        } else {
+            mediaRecorder.stop();
+            mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            isRecording = false;
+            recordBtn.innerHTML = '<i class="bi bi-mic-fill fs-3"></i>';
+            recordBtn.classList.replace('btn-warning', 'btn-danger');
+            audioStatus.innerHTML = '<i class="bi bi-check-circle-fill display-4 text-success"></i><p class="text-success mt-2">Đã ghi âm xong!</p>';
+            clearInterval(recordingTimer);
+        }
+    });
+
+    // Form submission
+    document.getElementById('createStoryForm').addEventListener('submit', function(e) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang tạo truyện...';
+    });
+</script>
+}

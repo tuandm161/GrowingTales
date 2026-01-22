@@ -1,0 +1,99 @@
+@model StoryDetailsViewModel
+@{
+    ViewData["Title"] = Model.Story.Title;
+    var currentPageData = Model.Story.Pages.FirstOrDefault(p => p.PageNumber == Model.CurrentPage);
+}
+
+<div class="container py-4">
+    <div class="alert alert-info mb-4">
+        <i class="bi bi-share me-2"></i>Đây là truyện được chia sẻ. 
+        <a href="/Story/Create" class="alert-link">Tạo truyện của bạn!</a>
+    </div>
+
+    <div class="story-viewer">
+        <!-- Story Header -->
+        <div class="mb-4">
+            <h1 class="h2 mb-2">@Model.Story.Title</h1>
+            <p class="text-muted mb-2">@Model.Story.Description</p>
+            <div class="d-flex gap-2 flex-wrap">
+                <span class="badge bg-primary"><i class="bi bi-person me-1"></i>@Model.Story.ChildName</span>
+                <span class="badge bg-secondary"><i class="bi bi-calendar me-1"></i>@Model.Story.ChildAge tuổi</span>
+                @if (!string.IsNullOrEmpty(Model.Story.Theme))
+                {
+                    <span class="badge bg-info">@Model.Story.Theme</span>
+                }
+            </div>
+        </div>
+
+        <!-- Current Page -->
+        @if (currentPageData != null)
+        {
+            <div class="story-page fade-in">
+                @if (!string.IsNullOrEmpty(currentPageData.ImageUrl))
+                {
+                    <div class="text-center mb-4">
+                        <img src="@currentPageData.ImageUrl" alt="Trang @currentPageData.PageNumber" 
+                             class="img-fluid story-page-image rounded shadow">
+                    </div>
+                }
+                
+                <div class="story-page-content" id="pageContent">
+                    @currentPageData.Content
+                </div>
+            </div>
+        }
+
+        <!-- Page Navigation -->
+        <div class="d-flex justify-content-between align-items-center mt-4">
+            @if (Model.CurrentPage > 1)
+            {
+                <a href="/Story/Shared/@Model.Story.ShareToken?page=@(Model.CurrentPage - 1)" class="btn btn-outline-primary">
+                    <i class="bi bi-chevron-left me-1"></i>Trang trước
+                </a>
+            }
+            else
+            {
+                <div></div>
+            }
+
+            <div class="page-nav">
+                @for (int i = 1; i <= Model.Story.Pages.Count; i++)
+                {
+                    <a href="/Story/Shared/@Model.Story.ShareToken?page=@i" 
+                       class="btn @(i == Model.CurrentPage ? "btn-primary" : "btn-outline-primary")">
+                        @i
+                    </a>
+                }
+            </div>
+
+            @if (Model.CurrentPage < Model.Story.Pages.Count)
+            {
+                <a href="/Story/Shared/@Model.Story.ShareToken?page=@(Model.CurrentPage + 1)" class="btn btn-outline-primary">
+                    Trang sau<i class="bi bi-chevron-right ms-1"></i>
+                </a>
+            }
+            else
+            {
+                <div></div>
+            }
+        </div>
+
+        <!-- CTA -->
+        <div class="text-center mt-5 p-4 bg-light rounded">
+            <h4>Thích truyện này?</h4>
+            <p class="text-muted">Tạo truyện riêng cho bé của bạn ngay!</p>
+            <a href="/Story/Create" class="btn btn-primary btn-lg">
+                <i class="bi bi-stars me-2"></i>Tạo Truyện Của Bạn
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function speakPage() {
+        const content = document.getElementById('pageContent').textContent;
+        TTS.speak(content);
+    }
+</script>
+}

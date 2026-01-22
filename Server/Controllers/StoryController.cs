@@ -1,117 +1,358 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Server.Models;
 using Server.Services;
+using Server.ViewModels;
 
 namespace Server.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
-public class StoryController : ControllerBase
+public class StoryController : Controller
 {
     private readonly GeminiService _geminiService;
     private readonly StoryStorageService _storageService;
+    private readonly ImageGenerationService _imageService;
+    private readonly ImagePromptService _imagePromptService;
+    private readonly SubscriptionService _subscriptionService;
     private readonly ILogger<StoryController> _logger;
 
     public StoryController(
         GeminiService geminiService,
         StoryStorageService storageService,
+        ImageGenerationService imageService,
+        ImagePromptService imagePromptService,
+        SubscriptionService subscriptionService,
         ILogger<StoryController> logger)
     {
         _geminiService = geminiService;
         _storageService = storageService;
+        _imageService = imageService;
+        _imagePromptService = imagePromptService;
+        _subscriptionService = subscriptionService;
         _logger = logger;
     }
 
-    [HttpPost("generate-from-text")]
-    public async Task<ActionResult<StoryResponse>> GenerateFromText([FromBody] StoryRequest request)
+    private Guid? GetCurrentUserId()
     {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var userId))
+        {
+            return userId;
+        }
+        return null;
+    }
+
+    // GET: /Story
+    public async Task<IActionResult> Index(string? search, string? theme, string? childName, bool? favorite)
+    {
+        var userId = GetCurrentUserId();
+        var stories = await _storageService.SearchStoriesAsync(
+            searchTerm: search,
+            theme: theme,
+            childName: childName,
+            isFavorite: favorite,
+            userId: userId
+        );
+
+        var allStories = await _storageService.GetAllStoriesAsync(userId);
+        
+        var viewModel = new StoryListViewModel
+        {
+            Stories = stories,
+            SearchTerm = search,
+            FilterTheme = theme,
+            FilterChildName = childName,
+            FilterFavorite = favorite,
+            AvailableThemes = allStories.Select(s => s.Theme).Where(t => !string.IsNullOrEmpty(t)).Distinct().ToList(),
+            AvailableChildNames = allStories.Select(s => s.ChildName).Distinct().ToList()
+        };
+
+        return View(viewModel);
+    }
+
+    // GET: /Story/Create
+    public async Task<IActionResult> Create()
+    {
+        var userId = GetCurrentUserId();
+        var limits = await _subscriptionService.GetUserLimitsAsync(userId);
+        
+        if (!limits.CanCreateStory)
+        {
+            TempData["ErrorMessage"] = limits.UpgradeMessage;
+            return RedirectToAction("Pricing", "Subscription");
+        }
+
+        ViewBag.Limits = limits;
+        return View(new CreateStoryViewModel());
+    }
+
+    // POST: /Story/Create
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(CreateStoryViewModel model)
+    {
+        var userId = GetCurrentUserId();
+        var limits = await _subscriptionService.GetUserLimitsAsync(userId);
+        
+        if (!limits.CanCreateStory)
+        {
+            TempData["ErrorMessage"] = limits.UpgradeMessage;
+            return RedirectToAction("Pricing", "Subscription");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            ViewBag.Limits = limits;
+            return View(model);
+        }
+
         try
         {
-            _logger.LogInformation($"Generating story for {request.ChildName}");
+            Story story;
 
-            var story = await _geminiService.GenerateStoryFromText(request);
-            _storageService.SaveStory(story);
-
-            return Ok(new StoryResponse
+            if (model.UseAudio && !string.IsNullOrEmpty(model.AudioBase64))
             {
-                Success = true,
-                Message = "Câu chuyện đã được tạo thành công!",
-                Story = story
-            });
+                var audioRequest = new AudioStoryRequest
+                {
+                    ChildName = model.ChildName,
+                    ChildAge = model.ChildAge,
+                    Theme = model.Theme ?? "",
+                    AudioBase64 = model.AudioBase64
+                };
+                story = await _geminiService.GenerateStoryFromAudio(audioRequest);
+            }
+            else
+            {
+                var textRequest = new StoryRequest
+                {
+                    ChildName = model.ChildName,
+                    ChildAge = model.ChildAge,
+                    Theme = model.Theme ?? "",
+                    InputText = model.Content ?? ""
+                };
+                story = await _geminiService.GenerateStoryFromText(textRequest);
+            }
+
+            story.UserId = userId;
+            await _storageService.SaveStoryAsync(story);
+
+            // Increment story count for user
+            if (userId.HasValue)
+            {
+                await _subscriptionService.IncrementStoryCount(userId.Value);
+            }
+
+            TempData["SuccessMessage"] = "Truyện đã được tạo thành công!";
+            return RedirectToAction("Details", new { id = story.Id });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating story from text");
-            return StatusCode(500, new StoryResponse
-            {
-                Success = false,
-                Message = $"Lỗi khi tạo câu chuyện: {ex.Message}"
-            });
+            _logger.LogError(ex, "Error creating story");
+            ModelState.AddModelError("", "Lỗi khi tạo truyện: " + ex.Message);
+            ViewBag.Limits = limits;
+            return View(model);
         }
     }
 
-    [HttpPost("generate-from-audio")]
-    public async Task<ActionResult<StoryResponse>> GenerateFromAudio([FromBody] AudioStoryRequest request)
+    // GET: /Story/Details/{id}
+    public async Task<IActionResult> Details(Guid id, int page = 1)
     {
-        try
-        {
-            _logger.LogInformation($"Generating story from audio for {request.ChildName}");
-
-            var story = await _geminiService.GenerateStoryFromAudio(request);
-            _storageService.SaveStory(story);
-
-            return Ok(new StoryResponse
-            {
-                Success = true,
-                Message = "Câu chuyện đã được tạo thành công từ giọng nói!",
-                Story = story
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error generating story from audio");
-            return StatusCode(500, new StoryResponse
-            {
-                Success = false,
-                Message = $"Lỗi khi tạo câu chuyện từ audio: {ex.Message}"
-            });
-        }
-    }
-
-    [HttpGet]
-    public ActionResult<List<Story>> GetAllStories()
-    {
-        var stories = _storageService.GetAllStories();
-        return Ok(stories);
-    }
-
-    [HttpGet("{id}")]
-    public ActionResult<Story> GetStory(Guid id)
-    {
-        var story = _storageService.GetStory(id);
+        var story = await _storageService.GetStoryAsync(id);
         if (story == null)
         {
-            return NotFound(new { message = "Không tìm thấy câu chuyện" });
+            TempData["ErrorMessage"] = "Không tìm thấy truyện";
+            return RedirectToAction("Index");
         }
-        return Ok(story);
-    }
 
-    [HttpGet("by-child/{childName}")]
-    public ActionResult<List<Story>> GetStoriesByChild(string childName)
-    {
-        var stories = _storageService.GetStoriesByChildName(childName);
-        return Ok(stories);
-    }
+        var userId = GetCurrentUserId();
+        var isOwner = story.UserId.HasValue && story.UserId == userId;
 
-    [HttpDelete("{id}")]
-    public ActionResult DeleteStory(Guid id)
-    {
-        var success = _storageService.DeleteStory(id);
-        if (!success)
+        var viewModel = new StoryDetailsViewModel
         {
-            return NotFound(new { message = "Không tìm thấy câu chuyện" });
+            Story = story,
+            CurrentPage = Math.Clamp(page, 1, story.Pages.Count),
+            IsOwner = isOwner,
+            ShareUrl = story.ShareToken != null 
+                ? $"{Request.Scheme}://{Request.Host}/Story/Shared/{story.ShareToken}" 
+                : null
+        };
+
+        return View(viewModel);
+    }
+
+    // GET: /Story/Shared/{shareToken}
+    public async Task<IActionResult> Shared(string shareToken, int page = 1)
+    {
+        var story = await _storageService.GetStoryByShareTokenAsync(shareToken);
+        if (story == null)
+        {
+            TempData["ErrorMessage"] = "Link chia sẻ không hợp lệ hoặc đã hết hạn";
+            return RedirectToAction("Index", "Home");
         }
-        return Ok(new { message = "Đã xóa câu chuyện thành công" });
+
+        var viewModel = new StoryDetailsViewModel
+        {
+            Story = story,
+            CurrentPage = Math.Clamp(page, 1, story.Pages.Count),
+            IsOwner = false
+        };
+
+        return View("SharedDetails", viewModel);
+    }
+
+    // POST: /Story/ToggleFavorite/{id}
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleFavorite(Guid id)
+    {
+        var isFavorite = await _storageService.ToggleFavoriteAsync(id);
+        TempData["SuccessMessage"] = isFavorite ? "Đã thêm vào yêu thích" : "Đã bỏ yêu thích";
+        return RedirectToAction("Details", new { id });
+    }
+
+    // POST: /Story/GenerateShareLink/{id}
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GenerateShareLink(Guid id)
+    {
+        try
+        {
+            var shareToken = await _storageService.GenerateShareTokenAsync(id);
+            var shareUrl = $"{Request.Scheme}://{Request.Host}/Story/Shared/{shareToken}";
+            TempData["ShareUrl"] = shareUrl;
+            TempData["SuccessMessage"] = "Đã tạo link chia sẻ!";
+        }
+        catch
+        {
+            TempData["ErrorMessage"] = "Không thể tạo link chia sẻ";
+        }
+        return RedirectToAction("Details", new { id });
+    }
+
+    // GET: /Story/Edit/{id}
+    [Authorize]
+    public async Task<IActionResult> Edit(Guid id)
+    {
+        var story = await _storageService.GetStoryAsync(id);
+        if (story == null)
+        {
+            return NotFound();
+        }
+
+        var userId = GetCurrentUserId();
+        if (story.UserId != userId)
+        {
+            return Forbid();
+        }
+
+        var viewModel = new EditStoryViewModel
+        {
+            Id = story.Id,
+            Title = story.Title,
+            Description = story.Description,
+            Theme = story.Theme
+        };
+
+        return View(viewModel);
+    }
+
+    // POST: /Story/Edit/{id}
+    [HttpPost]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(Guid id, EditStoryViewModel model)
+    {
+        if (id != model.Id)
+        {
+            return BadRequest();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var story = await _storageService.GetStoryAsync(id);
+        if (story == null)
+        {
+            return NotFound();
+        }
+
+        var userId = GetCurrentUserId();
+        if (story.UserId != userId)
+        {
+            return Forbid();
+        }
+
+        story.Title = model.Title;
+        story.Description = model.Description ?? "";
+        story.Theme = model.Theme ?? "";
+        story.UpdatedAt = DateTime.UtcNow;
+
+        await _storageService.SaveStoryAsync(story);
+
+        TempData["SuccessMessage"] = "Đã cập nhật truyện!";
+        return RedirectToAction("Details", new { id });
+    }
+
+    // POST: /Story/Delete/{id}
+    [HttpPost]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var story = await _storageService.GetStoryAsync(id);
+        if (story == null)
+        {
+            TempData["ErrorMessage"] = "Không tìm thấy truyện";
+            return RedirectToAction("Index");
+        }
+
+        var userId = GetCurrentUserId();
+        if (story.UserId != userId)
+        {
+            return Forbid();
+        }
+
+        await _storageService.DeleteStoryAsync(id);
+        TempData["SuccessMessage"] = "Đã xóa truyện!";
+        return RedirectToAction("Index");
+    }
+
+    // POST: /Story/RegenerateImage/{id}/{pageNumber}
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RegenerateImage(Guid id, int pageNumber)
+    {
+        try
+        {
+            var story = await _storageService.GetStoryAsync(id);
+            if (story == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy truyện";
+                return RedirectToAction("Index");
+            }
+
+            var page = story.Pages.FirstOrDefault(p => p.PageNumber == pageNumber);
+            if (page == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy trang";
+                return RedirectToAction("Details", new { id });
+            }
+
+            var imagePrompt = _imagePromptService.BuildImagePrompt(story, page);
+            var newImageUrl = await _imageService.GenerateImageBase64(imagePrompt);
+
+            await _storageService.UpdateStoryPageAsync(id, pageNumber, imageUrl: newImageUrl);
+
+            TempData["SuccessMessage"] = "Đã tạo lại hình ảnh!";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error regenerating image");
+            TempData["ErrorMessage"] = "Lỗi khi tạo lại hình ảnh";
+        }
+
+        return RedirectToAction("Details", new { id, page = pageNumber });
     }
 }
-

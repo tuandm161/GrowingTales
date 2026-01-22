@@ -1,0 +1,189 @@
+@model StoryDetailsViewModel
+@{
+    ViewData["Title"] = Model.Story.Title;
+    var currentPageData = Model.Story.Pages.FirstOrDefault(p => p.PageNumber == Model.CurrentPage);
+}
+
+<div class="container py-4">
+    <!-- Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ShareUrl"] != null)
+    {
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="bi bi-link-45deg me-2"></i>Link chia sẻ: 
+            <input type="text" class="form-control form-control-sm d-inline-block w-auto" value="@TempData["ShareUrl"]" readonly id="shareUrlInput">
+            <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="copyToClipboard(document.getElementById('shareUrlInput').value)">
+                <i class="bi bi-clipboard"></i> Sao chép
+            </button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="story-viewer">
+        <!-- Story Header -->
+        <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
+            <div>
+                <h1 class="h2 mb-2">@Model.Story.Title</h1>
+                <p class="text-muted mb-2">@Model.Story.Description</p>
+                <div class="d-flex gap-2 flex-wrap">
+                    <span class="badge bg-primary"><i class="bi bi-person me-1"></i>@Model.Story.ChildName</span>
+                    <span class="badge bg-secondary"><i class="bi bi-calendar me-1"></i>@Model.Story.ChildAge tuổi</span>
+                    @if (!string.IsNullOrEmpty(Model.Story.Theme))
+                    {
+                        <span class="badge bg-info">@Model.Story.Theme</span>
+                    }
+                </div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <!-- TTS Button -->
+                <button type="button" class="btn btn-outline-primary" onclick="speakPage()" id="ttsBtn">
+                    <i class="bi bi-volume-up me-1"></i>Đọc
+                </button>
+                
+                <!-- Favorite Button -->
+                <form asp-action="ToggleFavorite" asp-route-id="@Model.Story.Id" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn @(Model.Story.IsFavorite ? "btn-warning" : "btn-outline-warning")">
+                        <i class="bi bi-star@(Model.Story.IsFavorite ? "-fill" : "")"></i>
+                    </button>
+                </form>
+
+                <!-- Share Button -->
+                <form asp-action="GenerateShareLink" asp-route-id="@Model.Story.Id" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline-success">
+                        <i class="bi bi-share me-1"></i>Chia sẻ
+                    </button>
+                </form>
+
+                @if (Model.IsOwner)
+                {
+                    <a href="/Story/Edit/@Model.Story.Id" class="btn btn-outline-secondary">
+                        <i class="bi bi-pencil me-1"></i>Sửa
+                    </a>
+                    <form asp-action="Delete" asp-route-id="@Model.Story.Id" method="post" class="d-inline" 
+                          onsubmit="return confirm('Bạn có chắc chắn muốn xóa truyện này?')">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-danger">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+
+        <!-- Current Page -->
+        @if (currentPageData != null)
+        {
+            <div class="story-page fade-in">
+                @if (!string.IsNullOrEmpty(currentPageData.ImageUrl))
+                {
+                    <div class="text-center mb-4">
+                        <img src="@currentPageData.ImageUrl" alt="Trang @currentPageData.PageNumber" 
+                             class="img-fluid story-page-image rounded shadow">
+                    </div>
+                    
+                    @if (Model.IsOwner)
+                    {
+                        <div class="text-center mb-3">
+                            <form asp-action="RegenerateImage" asp-route-id="@Model.Story.Id" asp-route-pageNumber="@currentPageData.PageNumber" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-arrow-repeat me-1"></i>Tạo lại hình
+                                </button>
+                            </form>
+                        </div>
+                    }
+                }
+                
+                <div class="story-page-content" id="pageContent">
+                    @currentPageData.Content
+                </div>
+            </div>
+        }
+
+        <!-- Page Navigation -->
+        <div class="d-flex justify-content-between align-items-center mt-4">
+            @if (Model.CurrentPage > 1)
+            {
+                <a href="/Story/Details/@Model.Story.Id?page=@(Model.CurrentPage - 1)" class="btn btn-outline-primary">
+                    <i class="bi bi-chevron-left me-1"></i>Trang trước
+                </a>
+            }
+            else
+            {
+                <div></div>
+            }
+
+            <div class="page-nav">
+                @for (int i = 1; i <= Model.Story.Pages.Count; i++)
+                {
+                    <a href="/Story/Details/@Model.Story.Id?page=@i" 
+                       class="btn @(i == Model.CurrentPage ? "btn-primary" : "btn-outline-primary")">
+                        @i
+                    </a>
+                }
+            </div>
+
+            @if (Model.CurrentPage < Model.Story.Pages.Count)
+            {
+                <a href="/Story/Details/@Model.Story.Id?page=@(Model.CurrentPage + 1)" class="btn btn-outline-primary">
+                    Trang sau<i class="bi bi-chevron-right ms-1"></i>
+                </a>
+            }
+            else
+            {
+                <div></div>
+            }
+        </div>
+
+        <!-- Back to Library -->
+        <div class="text-center mt-4">
+            <a href="/Story" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Quay lại thư viện
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let isSpeaking = false;
+    
+    function speakPage() {
+        const content = document.getElementById('pageContent').textContent;
+        const btn = document.getElementById('ttsBtn');
+        
+        if (isSpeaking) {
+            TTS.stop();
+            btn.innerHTML = '<i class="bi bi-volume-up me-1"></i>Đọc';
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-outline-primary');
+            isSpeaking = false;
+        } else {
+            TTS.speak(content);
+            btn.innerHTML = '<i class="bi bi-stop-fill me-1"></i>Dừng';
+            btn.classList.remove('btn-outline-primary');
+            btn.classList.add('btn-primary');
+            isSpeaking = true;
+            
+            // Reset when finished
+            if (TTS.utterance) {
+                TTS.utterance.onend = () => {
+                    btn.innerHTML = '<i class="bi bi-volume-up me-1"></i>Đọc';
+                    btn.classList.remove('btn-primary');
+                    btn.classList.add('btn-outline-primary');
+                    isSpeaking = false;
+                };
+            }
+        }
+    }
+</script>
+}

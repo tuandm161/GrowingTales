@@ -56,24 +56,41 @@ public class GeminiService
                 {
                     page.ImageUrl = dataUrl;
                     imageGenerated = true;
-                    _logger.LogInformation($"✅ Successfully generated image for page {page.PageNumber}");
+                    _logger.LogInformation($" Successfully generated image for page {page.PageNumber}");
                 }
                 else
                 {
-                    _logger.LogWarning($"⚠️ Invalid image data URL for page {page.PageNumber}");
+                    _logger.LogWarning($" Invalid image data URL for page {page.PageNumber}");
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"❌ Failed to generate image for page {page.PageNumber}: {ex.Message}");
+                _logger.LogError(ex, $" Failed to generate image for page {page.PageNumber}: {ex.Message}");
             }
             
             // Always set fallback if image generation failed
             if (!imageGenerated || string.IsNullOrWhiteSpace(page.ImageUrl))
             {
-                var seed = $"{story.Title}-{page.PageNumber}".GetHashCode();
-                page.ImageUrl = $"https://picsum.photos/seed/{Math.Abs(seed)}/512/512";
-                _logger.LogWarning($"🔄 Using placeholder image for page {page.PageNumber}");
+                try
+                {
+                    // Try to use local fallback image
+                    var localImagePath = @"C:\Users\tuann\Downloads\123.jpg";
+                    if (System.IO.File.Exists(localImagePath))
+                    {
+                        var imageBytes = await System.IO.File.ReadAllBytesAsync(localImagePath);
+                        var base64 = Convert.ToBase64String(imageBytes);
+                        page.ImageUrl = $"data:image/jpeg;base64,{base64}";
+                        _logger.LogWarning($"🔄 Using local fallback image for page {page.PageNumber}");
+                    }
+                    else
+                    {
+                        _logger.LogWarning($" Local file not found for page {page.PageNumber}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Failed to load local fallback image for page {page.PageNumber}");
+                }
             }
             
             // Delay between pages to avoid rate limiting (except for last page)
@@ -92,9 +109,21 @@ public class GeminiService
             if (string.IsNullOrWhiteSpace(page.ImageUrl))
             {
                 missingCount++;
-                var seed = $"{story.Title}-{page.PageNumber}".GetHashCode();
-                page.ImageUrl = $"https://picsum.photos/seed/{Math.Abs(seed)}/512/512";
-                _logger.LogWarning($"🔧 Fixed missing image for page {page.PageNumber}");
+                try
+                {
+                    var localImagePath = @"C:\Users\tuann\Downloads\123.jpg";
+                    if (System.IO.File.Exists(localImagePath))
+                    {
+                        var imageBytes = await System.IO.File.ReadAllBytesAsync(localImagePath);
+                        var base64 = Convert.ToBase64String(imageBytes);
+                        page.ImageUrl = $"data:image/jpeg;base64,{base64}";
+                        _logger.LogWarning($" Fixed missing image for page {page.PageNumber}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Failed to load local image for page {page.PageNumber}");
+                }
             }
         }
         
@@ -104,7 +133,7 @@ public class GeminiService
         }
         else
         {
-            _logger.LogInformation("✅ All pages have images assigned");
+            _logger.LogInformation(" All pages have images assigned");
         }
         
         return story;
@@ -136,7 +165,7 @@ public class GeminiService
     {
         try
         {
-            var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key={_apiKey}";
+            var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={_apiKey}";
 
             var requestBody = new
             {
@@ -236,7 +265,7 @@ Chỉ trả về JSON, không thêm bất kỳ text nào khác.";
     {
         try
         {
-            var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key={_apiKey}";
+            var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={_apiKey}";
 
             var requestBody = new
             {

@@ -1,0 +1,55 @@
+@{
+    ViewData["Title"] = "Kết quả thanh toán";
+    var success = ViewBag.Success as bool? ?? false;
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card text-center">
+                <div class="card-body py-5">
+                    @if (success)
+                    {
+                        <div class="display-1 text-success mb-4">✅</div>
+                        <h2 class="text-success">Thanh Toán Thành Công!</h2>
+                        <p class="text-muted mb-4">@(TempData["SuccessMessage"] ?? "Gói Premium đã được kích hoạt.")</p>
+                        
+                        <div class="bg-light rounded p-4 mb-4">
+                            <div class="row text-start">
+                                <div class="col-6">
+                                    <p class="mb-2"><i class="bi bi-gem text-primary me-2"></i>Gói:</p>
+                                    <p class="mb-2"><i class="bi bi-infinity text-primary me-2"></i>Truyện:</p>
+                                    <p class="mb-0"><i class="bi bi-calendar text-primary me-2"></i>Hiệu lực:</p>
+                                </div>
+                                <div class="col-6">
+                                    <p class="mb-2 fw-bold">Premium</p>
+                                    <p class="mb-2 fw-bold">Không giới hạn</p>
+                                    <p class="mb-0 fw-bold">30 ngày</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <a href="/Story/Create" class="btn btn-primary btn-lg">
+                            <i class="bi bi-stars me-2"></i>Bắt đầu tạo truyện ngay
+                        </a>
+                    }
+                    else
+                    {
+                        <div class="display-1 text-danger mb-4">❌</div>
+                        <h2 class="text-danger">Thanh Toán Thất Bại</h2>
+                        <p class="text-muted mb-4">@(TempData["ErrorMessage"] ?? "Có lỗi xảy ra trong quá trình thanh toán.")</p>
+                        
+                        <div class="d-flex gap-3 justify-content-center flex-wrap">
+                            <a href="/Subscription/Pricing" class="btn btn-primary">
+                                <i class="bi bi-arrow-repeat me-2"></i>Thử lại
+                            </a>
+                            <a href="/Story/Create" class="btn btn-outline-secondary">
+                                Về trang tạo truyện
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,283 +1,159 @@
-# 📖 GrowingTales - AI-Powered Children's Storybook Generator
+# 📖 GrowingTales - Tạo truyện cho bé với AI
 
-**GrowingTales** là ứng dụng tạo câu chuyện kỷ niệm cho trẻ em bằng AI. Chuyển giọng nói hoặc văn bản thành những câu chuyện đẹp, ý nghĩa với sự hỗ trợ của Google Gemini AI.
-
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![.NET](https://img.shields.io/badge/.NET-10.0-purple)
-![React](https://img.shields.io/badge/React-18-blue)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)
-
----
+Ứng dụng web ASP.NET Core MVC giúp phụ huynh tạo truyện tranh được cá nhân hóa cho con yêu bằng công nghệ AI.
 
 ## ✨ Tính năng
 
-### 🎤 Hai cách nhập liệu
-- **📝 Nhập văn bản**: Viết ý tưởng câu chuyện
-- **🎙️ Ghi âm**: Kể câu chuyện bằng giọng nói của bạn
-
-### 🤖 AI-Powered
-- **Google Gemini 2.5 Pro** để:
-  - Chuyển giọng nói thành văn bản
-  - Tạo câu chuyện từ ý tưởng
-  - Tạo mô tả hình ảnh cho từng trang
+### 🎯 Tạo truyện
+- ✍️ Nhập văn bản hoặc 🎤 ghi âm giọng nói
+- 🤖 AI tự động tạo nội dung phù hợp với độ tuổi
+- 🎨 Tạo hình ảnh minh họa tự động
+- 🌈 Nhiều chủ đề: Dũng cảm, Tình bạn, Phiêu lưu, Khoa học...
 
 ### 📚 Quản lý truyện
-- Xem danh sách tất cả câu chuyện đã tạo
-- Đọc truyện với giao diện đẹp như sách thật
-- In truyện để lưu giữ
-- Xóa truyện không cần thiết
+- 💾 Lưu trữ và quản lý thư viện truyện
+- ⭐ Đánh dấu yêu thích
+- 🔍 Tìm kiếm và lọc theo chủ đề, tên bé
+- ✏️ Chỉnh sửa thông tin truyện
+- 🗑️ Xóa truyện
 
-### 🎨 Giao diện thân thiện
-- Responsive, hoạt động tốt trên mobile
-- Màu sắc sinh động, phù hợp với trẻ em
-- Animation mượt mà
-- Modern UI/UX
+### 🎭 Tính năng nâng cao
+- 🔊 Text-to-Speech - Đọc truyện tự động
+- 🔗 Chia sẻ truyện qua link
+- 📄 Xuất PDF (sắp có)
+- 🖼️ Tạo lại hình ảnh nếu không hài lòng
 
----
+### 💎 Gói đăng ký
+- 🆓 **Free**: 3 truyện miễn phí, tối đa 5 trang/truyện
+- ⭐ **Premium** (150.000đ/tháng): Không giới hạn, 15 trang/truyện, không watermark
 
-## 🚀 Quick Start
-
-### Prerequisites
-- **.NET 10.0 SDK**
-- **Node.js 18+**
-- **Gemini API Key** (free)
-
-### Setup (3 phút)
-
-```bash
-# 1. Clone repository
-git clone <your-repo-url>
-cd GrowingTalesTest
-
-# 2. Backend setup
-cd Server
-cp appsettings.json.example appsettings.json
-# Thêm Gemini API key vào appsettings.json
-
-# 3. Frontend setup
-cd ../ClientApp/react-app
-npm install
-
-# 4. Run!
-# Terminal 1 - Backend
-cd Server
-dotnet run
-
-# Terminal 2 - Frontend
-cd ClientApp/react-app
-npm run dev
-```
-
-**Xem chi tiết:** [SETUP.md](SETUP.md)
-
----
-
-## 📁 Project Structure
-
-```
-GrowingTalesTest/
-├── Server/                      # .NET 10 Backend
-│   ├── Controllers/            # API endpoints
-│   ├── Services/
-│   │   ├── GeminiService.cs   # Gemini AI integration
-│   │   └── StoryStorageService.cs
-│   ├── Models/
-│   └── Program.cs
-│
-└── ClientApp/
-    └── react-app/              # React 18 + Vite Frontend
-        ├── src/
-        │   ├── pages/          # Main components
-        │   │   ├── CreateStory.tsx
-        │   │   ├── StoryList.tsx
-        │   │   └── StoryViewer.tsx
-        │   ├── services/       # API integration
-        │   └── models/         # TypeScript types
-        └── package.json
-```
-
----
-
-## 🛠️ Tech Stack
+## 🛠️ Công nghệ sử dụng
 
 ### Backend
-- **.NET 10.0** - Modern C# framework
-- **ASP.NET Core Web API** - RESTful API
-- **Google Gemini 2.5 Pro** - AI text generation
-- **In-memory storage** - Simple data storage
+- ASP.NET Core 8.0 MVC
+- Entity Framework Core
+- SQLite / Azure SQL Database
+- Cookie Authentication
+
+### AI Services
+- Google Gemini API - Tạo nội dung truyện
+- WhomeAI - Tạo hình ảnh
+
+### Payment Gateway
+- VNPay - Thanh toán online
 
 ### Frontend
-- **React 18** - UI library
-- **TypeScript 5.9** - Type safety
-- **Vite 7** - Lightning-fast build tool
-- **React Router** - Client-side routing
-- **Axios** - HTTP client
+- Razor Views
+- Bootstrap 5
+- Bootstrap Icons
+- Web Speech API (Text-to-Speech)
 
----
+## 📦 Cấu trúc Database
 
-## 🎯 Features
+### Bảng chính
+- **Users** - Người dùng (Role, Status, Subscription)
+- **Stories** - Truyện (Title, Theme, ViewCount)
+- **StoryPages** - Trang truyện (Content, Image)
+- **Subscriptions** - Gói đăng ký
+- **Payments** - Giao dịch thanh toán (theo dõi doanh thu)
+- **ActivityLogs** - Nhật ký hoạt động
+- **Notifications** - Thông báo người dùng
+- **SystemSettings** - Cấu hình hệ thống
+- **Contacts** - Liên hệ/phản hồi
 
-| Feature | Description | Status |
-|---------|-------------|--------|
-| Text to Story | Tạo truyện từ văn bản | ✅ |
-| Voice to Story | Tạo truyện từ giọng nói | ✅ |
-| Story List | Danh sách truyện | ✅ |
-| Story Viewer | Xem truyện page by page | ✅ |
-| Print Story | In truyện ra giấy | ✅ |
-| Delete Story | Xóa truyện | ✅ |
-| Responsive UI | Mobile-friendly | ✅ |
-| Image Generation | AI tạo ảnh | 🚧 (Placeholder) |
+## 🚀 Cài đặt Local
 
----
+### Yêu cầu
+- .NET 8.0 SDK trở lên
+- Visual Studio 2022 hoặc VS Code
 
-## 📸 Screenshots
+### Các bước
 
-### Create Story
-![Create Story](docs/screenshots/create-story.png)
-
-### Story Viewer
-![Story Viewer](docs/screenshots/story-viewer.png)
-
-### Story List
-![Story List](docs/screenshots/story-list.png)
-
----
-
-## 🔑 Getting Gemini API Key
-
-1. Truy cập: [Google AI Studio](https://aistudio.google.com/app/apikey)
-2. Đăng nhập với Google account
-3. Click "Create API Key"
-4. Copy key và thêm vào `Server/appsettings.json`
-
-**Free tier:**
-- 15 requests/minute
-- 1500 requests/day
-- Đủ cho development!
-
----
-
-## 🧪 API Endpoints
-
-### Story Management
-
-```
-POST   /api/story/generate-from-text      # Tạo truyện từ văn bản
-POST   /api/story/generate-from-audio     # Tạo truyện từ audio
-GET    /api/story                         # Lấy tất cả truyện
-GET    /api/story/{id}                    # Lấy 1 truyện
-GET    /api/story/by-child/{childName}    # Lấy truyện theo tên bé
-DELETE /api/story/{id}                    # Xóa truyện
+1. **Clone repository**
+```powershell
+git clone <repo-url>
+cd GrowingTales
 ```
 
-**Example Request:**
-```bash
-POST http://localhost:5002/api/story/generate-from-text
-Content-Type: application/json
+2. **Cấu hình API Keys**
 
+Tạo file `Server/appsettings.Development.json`:
+```json
 {
-  "inputText": "Một câu chuyện về con thỏ dũng cảm",
-  "childName": "Minh",
-  "childAge": 5,
-  "theme": "Phiêu lưu",
-  "pageCount": 5,
-  "language": "vi"
+  "GeminiAPI": {
+    "ApiKey": "YOUR_GEMINI_API_KEY"
+  },
+  "WhomeAI": {
+    "ApiKey": "YOUR_WHOME_API_KEY"
+  },
+  "VnPay": {
+    "TmnCode": "YOUR_VNPAY_CODE",
+    "HashSecret": "YOUR_VNPAY_SECRET"
+  }
 }
 ```
 
----
-
-## 🚀 Deployment
-
-### Backend (Azure App Service)
-```bash
+3. **Chạy ứng dụng**
+```powershell
 cd Server
-dotnet publish -c Release -o ./publish
-# Deploy to Azure
+dotnet restore
+dotnet run
 ```
 
-### Frontend (Vercel/Netlify)
-```bash
-cd ClientApp/react-app
-npm run build
-# Deploy dist/ folder
+4. **Truy cập**
+- URL: http://localhost:5002
+
+## 🌐 Deploy lên Azure
+
+### Cách nhanh nhất (Khuyến khích)
+
+```powershell
+# 1. Setup Azure resources
+.\setup-azure-resources.ps1
+
+# 2. Cấu hình API keys trong Azure Portal
+
+# 3. Deploy
+.\deploy-to-azure.ps1
 ```
 
----
+### Hướng dẫn chi tiết
+Xem file: **[AZURE_DEPLOYMENT_GUIDE.md](AZURE_DEPLOYMENT_GUIDE.md)**
 
-## 🤝 Contributing
+Hoặc hướng dẫn nhanh: **[DEPLOY_QUICKSTART.md](DEPLOY_QUICKSTART.md)**
 
-Contributions are welcome! 
+## 📊 Admin Features (Sắp có)
 
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+- 📈 Dashboard thống kê doanh thu
+- 👥 Quản lý người dùng
+- 💰 Báo cáo thanh toán
+- 📧 Xem liên hệ/phản hồi
+- ⚙️ Cấu hình hệ thống
 
-**Before committing:** Read [BEFORE_COMMIT_CHECKLIST.md](BEFORE_COMMIT_CHECKLIST.md)
+## 🔐 API Keys cần thiết
 
----
+### 1. Google Gemini API
+- Đăng ký: https://makersuite.google.com/app/apikey
+- Free: 60 requests/minute
+- Dùng model: `gemini-2.0-flash-exp`
 
-## 📝 Documentation
+### 2. WhomeAI
+- Đăng ký: https://whome.so
+- Dùng cho tạo hình ảnh
+- Model: `flux-dev`
 
-- [Setup Guide](SETUP.md) - Hướng dẫn cài đặt chi tiết
-- [Migration Guide](ClientApp/MIGRATION_GUIDE.md) - Angular to React migration
-- [Commit Checklist](BEFORE_COMMIT_CHECKLIST.md) - Trước khi commit lên Git
+### 3. VNPay (Tuỳ chọn)
+- Đăng ký doanh nghiệp: https://vnpay.vn
+- Sandbox mode có sẵn trong config để test
 
----
+## 📝 License
 
-## 🐛 Known Issues
+Private project - All rights reserved
 
-- [ ] Images are placeholders (Unsplash integration removed)
-- [ ] Stories stored in memory (lost on restart)
-- [ ] No user authentication
-- [ ] No database
+## 👨‍💻 Phát triển bởi
 
----
-
-## 🎯 Roadmap
-
-- [ ] **AI Image Generation** - Integrate real image generation API
-- [ ] **Database** - PostgreSQL or MongoDB
-- [ ] **User Authentication** - Login/Register
-- [ ] **Export PDF** - Download story as PDF
-- [ ] **Share Stories** - Share via link
-- [ ] **Multi-language** - Support English, Vietnamese
-- [ ] **Voice Synthesis** - AI reads story aloud
-- [ ] **Cloud Storage** - Save images to cloud
+GrowingTales Team
 
 ---
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 👨‍💻 Author
-
-**Your Name**
-- GitHub: [@yourusername](https://github.com/yourusername)
-- Email: your.email@example.com
-
----
-
-## 🙏 Acknowledgments
-
-- **Google Gemini AI** - Powerful text generation
-- **Lorem Picsum** - Placeholder images
-- **React Community** - Amazing ecosystem
-- **.NET Community** - Excellent documentation
-
----
-
-## ⭐ Show your support
-
-Give a ⭐️ if this project helped you!
-
----
-
-Made with ❤️ for children's memories
-
-**Status:** 🟢 Active Development
+**Made with ❤️ for Vietnamese children**
