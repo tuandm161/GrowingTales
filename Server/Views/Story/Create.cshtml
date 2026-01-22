@@ -34,7 +34,10 @@
                         <input type="hidden" asp-for="AudioBase64" id="audioBase64" />
                         <input type="hidden" asp-for="AudioMimeType" id="audioMimeType" />
                         
-                        <div asp-validation-summary="All" class="alert alert-danger"></div>
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div asp-validation-summary="All" class="alert alert-danger"></div>
+                        }
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
