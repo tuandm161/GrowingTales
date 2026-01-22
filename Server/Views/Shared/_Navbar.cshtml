@@ -27,12 +27,27 @@
             <ul class="navbar-nav">
                 @if (User.Identity?.IsAuthenticated == true)
                 {
+                    var avatarUrl = User.FindFirst("AvatarUrl")?.Value;
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-circle me-1"></i>@User.Identity.Name
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" style="gap: 8px;">
+                            @if (!string.IsNullOrEmpty(avatarUrl))
+                            {
+                                <img src="@avatarUrl" alt="Avatar" 
+                                     class="rounded-circle" 
+                                     style="width: 32px; height: 32px; object-fit: cover; border: 2px solid rgba(255,255,255,0.3); flex-shrink: 0;"
+                                     onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                                <i class="bi bi-person-circle" style="display: none; font-size: 1.5rem; flex-shrink: 0;"></i>
+                            }
+                            else
+                            {
+                                <i class="bi bi-person-circle" style="font-size: 1.5rem; flex-shrink: 0;"></i>
+                            }
+                            <span class="text-nowrap">@User.Identity.Name</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="/Story"><i class="bi bi-collection me-2"></i>Truyện của tôi</a></li>
+                            <li><a class="dropdown-item" href="/Account/Profile"><i class="bi bi-person-gear me-2"></i>Hồ sơ</a></li>
+                            <li><a class="dropdown-item" href="/Account/ChangePassword"><i class="bi bi-shield-lock me-2"></i>Đổi mật khẩu</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form asp-controller="Account" asp-action="Logout" method="post">
