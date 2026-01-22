@@ -305,6 +305,17 @@ public class AccountController : Controller
             return RedirectToAction("Index", "Home");
         }
 
+        // Clear any unrelated TempData messages (like logout message)
+        // Only keep messages that are specifically for ForgotPassword
+        if (TempData["SuccessMessage"] != null && !TempData.ContainsKey("ForgotPasswordMessage"))
+        {
+            TempData.Remove("SuccessMessage");
+        }
+        if (TempData["ErrorMessage"] != null && !TempData.ContainsKey("ForgotPasswordError"))
+        {
+            TempData.Remove("ErrorMessage");
+        }
+
         return View(new ForgotPasswordViewModel());
     }
 
@@ -328,11 +339,12 @@ public class AccountController : Controller
 
         if (success)
         {
-            TempData["SuccessMessage"] = message;
+            TempData["ForgotPasswordMessage"] = message;
             TempData["InfoMessage"] = "Vui lòng kiểm tra email của bạn để nhận link đặt lại mật khẩu. Nếu không thấy email, hãy kiểm tra thư mục spam.";
         }
         else
         {
+            TempData["ForgotPasswordError"] = message;
             ModelState.AddModelError(string.Empty, message);
             return View(model);
         }
