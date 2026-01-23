@@ -61,7 +61,7 @@ az webapp create `
     --name $AppName `
     --resource-group $ResourceGroup `
     --plan $PlanName `
-    --runtime "DOTNET:8.0" `
+    --runtime "DOTNETCORE:10.0" `
     --output none
 
 if ($LASTEXITCODE -eq 0) {

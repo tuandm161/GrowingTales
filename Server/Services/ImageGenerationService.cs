@@ -11,6 +11,7 @@ public class ImageGenerationService
     private readonly ILogger<ImageGenerationService> _logger;
     private readonly string _apiKey;
     private readonly string _baseUrl;
+    private readonly string? _googleToken;
 
     private readonly int _retries;
     public ImageGenerationService(HttpClient httpClient, ILogger<ImageGenerationService> logger, IConfiguration configuration)
@@ -19,10 +20,11 @@ public class ImageGenerationService
         _logger = logger;
         _apiKey = configuration["WhomeAI:ApiKey"] ?? "sk-demo";
         _baseUrl = configuration["WhomeAI:BaseUrl"] ?? "https://api.whomeai.com";
+        _googleToken = configuration["WhomeAI:GoogleToken"];
         _retries = int.TryParse(configuration["WhomeAI:Retries"], out var r) ? Math.Max(1, r) : 5;
     }
 
-    public async Task<string> GenerateImageBase64(string prompt, string size = "1024x1792", string model = "nano-banana")
+    public async Task<string> GenerateImageBase64(string prompt, string size = "1792x1024", string model = "gemini-2.5-flash")
     {
         // Returns data URL string: data:image/png;base64,<b64>
         var url = $"{_baseUrl}/v1/images/generations";
@@ -49,6 +51,12 @@ public class ImageGenerationService
                 using var request = new HttpRequestMessage(HttpMethod.Post, url);
                 request.Content = content;
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
+                
+                // Thêm Google Token nếu có (cho Gemini Image API)
+                if (!string.IsNullOrEmpty(_googleToken))
+                {
+                    request.Headers.Add("X-Google-Token", _googleToken);
+                }
 
                 var response = await _httpClient.SendAsync(request);
                 var responseContent = await response.Content.ReadAsStringAsync();
